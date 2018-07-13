@@ -1,0 +1,39 @@
+{
+    "name": "numericscoder/npay-laravel",
+    "description": "A laravel 5.6 Package for N-pay",
+     "keywords": ["php","github", "laravel","Open Source","payments",  "bvnpay.ng", "npay","laravel 5"],
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "PeterNdeke",
+            "email": "ndekepeter2015@gmail.com"
+        }
+    ],
+    "repositories": [
+    {
+        "type": "package",
+        "package": {
+            "name": "numericscoder/npay-laravel",
+            "version": "dev-master",
+            "source": {
+                "type": "vcs",
+                "url": "git://github.com/PeterNdeke/npay-laravel.git",
+                
+                "reference": "master"
+            },
+            "autoload": {
+                "psr-0" : {
+                    "Numericscoder\\Laravel" : "src"
+                }
+            }
+        }
+    }
+],
+"require": {
+        "php": "^5.3.3 || ^7.0",
+        "guzzlehttp/guzzle": "~6.0"
+        
+    }
+   
+}
