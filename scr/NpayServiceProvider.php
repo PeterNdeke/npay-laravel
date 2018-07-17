@@ -42,7 +42,7 @@ class NpayServiceProvider extends ServiceProvider
     {
         $this->app->bind('npay-laravel', function () {
 
-            return new Npay;
+            return new NPay;
 
         });
     }
