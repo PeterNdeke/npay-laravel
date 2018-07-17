@@ -7,7 +7,7 @@
 
 [PHP](https://php.net) 5.4+ and [Composer](https://getcomposer.org) are required.
 
-To get the latest version of Laravel Paystack, simply require it using composer
+To get the latest version of Npay-laravel, simply require it using composer
 
 ```bash
 composer require numericscoder/npay-laravel
@@ -25,7 +25,7 @@ You'll then need to run `composer install` or `composer update` to download it a
 
 Once Laravel Paystack is installed, you need to register the service provider. Open up `config/app.php` and add the following to the `providers` key.
 
-> If you use **Laravel >= 5.5** you can skip this step and go to [**`configuration`**](https://github.com/unicodeveloper/laravel-paystack#configuration)
+> If you use **Laravel >= 5.5** you can skip this step and go to [**`configuration`**](https://github.com/unicodeveloper/npay-laravel#configuration)
 
 * `Numericscoder\Npay\NpayServiceProvider::class`
 
@@ -100,12 +100,12 @@ The hash is calculated out of some of the fields returned and a secret non-publi
 
 ## Usage
 
-Open your .env file and add your public key, secret key, merchant email and payment url like so:
+Open your .env file and add your Api key, merchant email and payment url like so:
 
 ```php
 NPAY_API_KEY=xxxxxxxxxxxxx
 NPAY_PAYMENT_URL=https://bvnpay.ng
-MERCHANT_EMAIL=unicodeveloper@gmail.com
+MERCHANT_EMAIL=merchant@gmail.com
 ```
 
 Set up routes and controller methods like so:
