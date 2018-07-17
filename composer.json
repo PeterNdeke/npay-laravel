@@ -15,7 +15,7 @@
         "type": "package",
         "package": {
             "name": "numericscoder/npay-laravel",
-            "version": "dev-master",
+            "version": "1.0",
             "source": {
                 "type": "vcs",
                 "url": "git://github.com/PeterNdeke/npay-laravel.git",
@@ -23,8 +23,8 @@
                 "reference": "master"
             },
             "autoload": {
-                "psr-0" : {
-                    "Numericscoder\\Laravel" : "src"
+                "psr-4" : {
+                    "Numericscoder\\Npay\\" : "src/"
                 }
             }
         }
@@ -34,6 +34,16 @@
         "php": "^5.3.3 || ^7.0",
         "guzzlehttp/guzzle": "~6.0"
         
+    },
+    "extra": {
+    "laravel": {
+        "providers": [
+            "Numericscoder\\Npay\\NpayServiceProvider"
+        ],
+        "aliases": {
+            "Npay": "Numericscoder\\Npay\\Facades\\Npay"
+        }
     }
+}
    
 }
