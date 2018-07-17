@@ -1,53 +1,58 @@
-NPay-Laravel
+laravel-paystack
+Latest Stable Version License Build Status Quality Score Total Downloads
 
-
-A Laravel 5.6 Package for seamlessly integrating laravel
+A Laravel 5 Package for working with Paystack seamlessly
 
 Installation
-PHP 5.4+  and Composer are required.
+PHP 5.4+ or HHVM 3.3+, and Composer are required.
 
-To get the latest version of NPay laravel package, simply require it using composer by
+To get the latest version of Laravel Paystack, simply require it
 
-composer require numericscoder/npay-laravel
+composer require unicodeveloper/laravel-paystack
 Or add the following line to the require block of your composer.json file.
 
-"numericscoder/npay-laravel": "1.0.*"
+"unicodeveloper/laravel-paystack": "1.0.*"
 You'll then need to run composer install or composer update to download it and have the autoloader updated.
 
-Once N-pay  is installed, you need to register the service provider. Open up config/app.php and add the following to the providers key array.
+Once Laravel Paystack is installed, you need to register the service provider. Open up config/app.php and add the following to the providers key.
 
 If you use Laravel >= 5.5 you can skip this step and go to configuration
 
-Numericscoder\Npay\NpayServiceProvider::class
+Unicodeveloper\Paystack\PaystackServiceProvider::class
 Also, register the Facade like so:
 
 'aliases' => [
     ...
-    'Npay' => Numericscoder\Npay\Facades\Npay::class,
+    'Paystack' => Unicodeveloper\Paystack\Facades\Paystack::class,
     ...
 ]
 Configuration
 You can publish the configuration file using this command:
 
-php artisan vendor:publish --provider="Numericscoder\Npay\NpayServiceProvider"
-A configuration-file named npay.php with some sensible defaults will be placed in your config directory:
+php artisan vendor:publish --provider="Unicodeveloper\Paystack\PaystackServiceProvider"
+A configuration-file named paystack.php with some sensible defaults will be placed in your config directory:
 
 <?php
 
 return [
 
     /**
-     * Api Secret Key
+     * Public Key From Paystack Dashboard
      *
      */
-    'secretKey' => getenv('NPAY_API_KEY'),
+    'publicKey' => getenv('PAYSTACK_PUBLIC_KEY'),
 
-    
     /**
-     * Npay Payment URL
+     * Secret Key From Paystack Dashboard
      *
      */
-    'paymentUrl' => getenv('NPAY_PAYMENT_URL'),
+    'secretKey' => getenv('PAYSTACK_SECRET_KEY'),
+
+    /**
+     * Paystack Payment URL
+     *
+     */
+    'paymentUrl' => getenv('PAYSTACK_PAYMENT_URL'),
 
     /**
      * Optional email address of the merchant
@@ -56,8 +61,6 @@ return [
     'merchantEmail' => getenv('MERCHANT_EMAIL'),
 
 ];
-
-
 ##General payment flow
 
 Though there are multiple ways to pay an order, most payment gateways expect you to follow the following flow in your checkout process:
@@ -75,24 +78,33 @@ The hash is calculated using the hidden form fields and a non-public secret. The
 The hash is calculated out of some of the fields returned and a secret non-public value. This hash is used to verify if the request is valid and comes from the payment provider. It is paramount that this hash is thoroughly checked.
 
 Usage
-Open your .env file and add your Api key, merchant email and payment url like so:
+Open your .env file and add your public key, secret key, merchant email and payment url like so:
 
-NPAY_API_KEY=xxxxxxxxxxxxx
-NPAY_PAYMENT_URL=https://bvnpay.ng
+PAYSTACK_PUBLIC_KEY=xxxxxxxxxxxxx
+PAYSTACK_SECRET_KEY=xxxxxxxxxxxxx
+PAYSTACK_PAYMENT_URL=https://api.paystack.co
 MERCHANT_EMAIL=unicodeveloper@gmail.com
 Set up routes and controller methods like so:
 
-Note: you have to provide your call back URL /payment/getTransaction, Because that is where we will redirect you after a successfull transaction
-you can also provide it as one of the params in your form that will be sent to us
+Note: Make sure you have /payment/callback registered in Paystack Dashboard https://dashboard.paystack.co/#/settings/developer like so:
 
 payment-callback
 
 // Laravel 5.1.17 and above
-Route::post('/setTransaction', 'PaymentController@redirectToGateway')->name('setTransaction'); 
+Route::post('/pay', 'PaymentController@redirectToGateway')->name('pay'); 
+OR
 
-Route::get('/payment/getTransactiion', 'PaymentController@handleGatewayCallback');
+Route::post('/pay', [
+    'uses' => 'PaymentController@redirectToGateway',
+    'as' => 'pay'
+]);
+Route::get('/payment/callback', 'PaymentController@handleGatewayCallback');
+OR
 
-
+// Laravel 5.0
+Route::get('payment/callback', [
+    'uses' => 'PaymentController@handleGatewayCallback'
+]); 
 <?php
 
 namespace App\Http\Controllers;
@@ -101,55 +113,120 @@ use Illuminate\Http\Request;
 
 use App\Http\Requests;
 use App\Http\Controllers\Controller;
-use NPay;
+use Paystack;
 
 class PaymentController extends Controller
 {
 
     /**
-     * Redirect the User to NPay Payment Page
+     * Redirect the User to Paystack Payment Page
      * @return Url
      */
     public function redirectToGateway()
     {
-        return NPay::getAuthorizationUrl()->redirectNow();
+        return Paystack::getAuthorizationUrl()->redirectNow();
     }
 
     /**
-     * Obtain NPay payment information
+     * Obtain Paystack payment information
      * @return void
      */
     public function handleGatewayCallback()
     {
-        $paymentDetails = NPay::getPaymentData();
+        $paymentDetails = Paystack::getPaymentData();
 
         dd($paymentDetails);
-        // Now you can do whatever you want with the details;
-        // you can save it in your database
+        // Now you have the payment details,
+        // you can store the authorization_code in your db to allow for recurrent subscriptions
         // you can then redirect or do whatever you want
     }
 }
+Let me explain the fluent methods this package provides a bit here.
 
-A sample HTML  form will look like so:
+/**
+ *  This fluent method does all the dirty work of sending a POST request with the form data
+ *  to Paystack Api, then it gets the authorization Url and redirects the user to Paystack
+ *  Payment Page. I abstracted all of it, so you don't have to worry about that.
+ *  Just eat your cookies while coding!
+ */
+Paystack::getAuthorizationUrl()->redirectNow();
 
-<form method="POST" action="{{ route('setTransaction') }}" accept-charset="UTF-8" class="form-horizontal" role="form">
-@csrf
+/**
+ * This fluent method does all the dirty work of verifying that the just concluded transaction was actually valid,
+ * It verifies the transaction reference with Paystack Api and then grabs the data returned from Paystack.
+ * In that data, we have a lot of good stuff, especially the `authorization_code` that you can save in your db
+ * to allow for easy recurrent subscription.
+ */
+Paystack::getPaymentData();
+
+/**
+ * This method gets all the customers that have performed transactions on your platform with Paystack
+ * @returns array
+ */
+Paystack::getAllCustomers();
+
+/**
+ * This method gets all the plans that you have registered on Paystack
+ * @returns array
+ */
+Paystack::getAllPlans();
+
+/**
+ * This method gets all the transactions that have occurred
+ * @returns array
+ */
+Paystack::getAllTransactions();
+
+/**
+ * This method generates a unique super secure cryptograhical hash token to use as transaction reference
+ * @returns string
+ */
+Paystack::genTranxRef();
+
+/**
+* This method creates a subaccount to be used for split payments 
+* @return array
+*/
+Paystack::createSubAccount();
+
+
+/**
+* This method fetches the details of a subaccount  
+* @return array
+*/
+Paystack::fetchSubAccount();
+
+
+/**
+* This method lists the subaccounts associated with your paystack account 
+* @return array
+*/
+Paystack::listSubAccounts();
+
+/**
+* This method Updates a subaccount to be used for split payments 
+* @return array
+*/
+Paystack::updateSubAccount();
+A sample form will look like so:
+
+<form method="POST" action="{{ route('pay') }}" accept-charset="UTF-8" class="form-horizontal" role="form">
         <div class="row" style="margin-bottom:40px;">
           <div class="col-md-8 col-md-offset-2">
             <p>
                 <div>
-                   Payment Details
+                    Lagos Eyo Print Tee Shirt
+                    ₦ 2,950
                 </div>
             </p>
-            <input type="hidden" name="email" value="ndekepeter2015@gmail.com"> {{-- required --}}
-            <input type="hidden" name="orderID" value="123">
+            <input type="hidden" name="email" value="otemuyiwa@gmail.com"> {{-- required --}}
+            <input type="hidden" name="orderID" value="345">
             <input type="hidden" name="amount" value="800"> {{-- required in kobo --}}
             <input type="hidden" name="quantity" value="3">
             <input type="hidden" name="metadata" value="{{ json_encode($array = ['key_name' => 'value',]) }}" > {{-- For other necessary things you want to add to your payload. it is optional though --}}
-            <input type="hidden" name="reference" value="{{ NPay::genTranxRef() }}"> {{-- required --}}
-            <input type="hidden" name="key" value="{{ config('npay.secretKey') }}"> {{-- required --}}
-          <input type="hidden" name="callbackUrl" value="your-callback-url"> {{-- required --}}
-            
+            <input type="hidden" name="reference" value="{{ Paystack::genTranxRef() }}"> {{-- required --}}
+            <input type="hidden" name="key" value="{{ config('paystack.secretKey') }}"> {{-- required --}}
+            {{ csrf_field() }} {{-- works only when using laravel 5.1, 5.2 --}}
 
              <input type="hidden" name="_token" value="{{ csrf_token() }}"> {{-- employ this in place of csrf_field only in laravel 5.0 --}}
 
@@ -162,9 +239,36 @@ A sample HTML  form will look like so:
           </div>
         </div>
 </form>
-When clicking the submit button the customer gets redirected to the Npay site.
+When clicking the submit button the customer gets redirected to the Paystack site.
 
-so hopefully, customer pay the order and will be redirected back to the specified call back URL with the payment status
+So now we've redirected the customer to Paystack. The customer did some actions there (hopefully he or she paid the order) and now gets redirected back to our shop site.
 
-we must validate request coming to our payment gateway
+Paystack will redirect the customer to the url of the route that is specified in the Callback URL of the Web Hooks section on Paystack dashboard.
 
+We must validate if the redirect to our site is a valid request (we don't want imposters to wrongfully place non-paid order).
+
+In the controller that handles the request coming from the payment provider, we have
+
+Paystack::getPaymentData() - This function calls the verification methods and ensure it is a valid transction else it throws an exception.
+
+You can test with these details
+
+Card Number: 4123450131001381
+Expiry Date: any date in the future
+CVV: 883
+Todo
+Charge Returning Customers
+Add Comprehensive Tests
+Implement Transaction Dashboard to see all of the transactions in your laravel app
+Contributing
+Please feel free to fork this package and contribute by submitting a pull request to enhance the functionalities.
+
+How can I thank you?
+Why not star the github repo? I'd love the attention! Why not share the link for this repository on Twitter or HackerNews? Spread the word!
+
+Don't forget to follow me on twitter!
+
+Thanks! Prosper Otemuyiwa.
+
+License
+The MIT License (MIT). Please see License File for more information.
