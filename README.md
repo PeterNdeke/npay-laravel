@@ -25,7 +25,7 @@ You'll then need to run `composer install` or `composer update` to download it a
 
 Once Laravel Paystack is installed, you need to register the service provider. Open up `config/app.php` and add the following to the `providers` key.
 
-> If you use **Laravel >= 5.5** you can skip this step and go to [**`configuration`**](https://github.com/unicodeveloper/npay-laravel#configuration)
+> If you use **Laravel >= 5.5** you can skip this step and go to [**`configuration`**](https://github.com/PeterNdeke/npay-laravel#configuration)
 
 * `Numericscoder\Npay\NpayServiceProvider::class`
 
@@ -132,7 +132,7 @@ use Illuminate\Http\Request;
 
 use App\Http\Requests;
 use App\Http\Controllers\Controller;
-use NPay;
+use Npay;
 
 class PaymentController extends Controller
 {
@@ -143,7 +143,7 @@ class PaymentController extends Controller
      */
     public function redirectToGateway()
     {
-        return Paystack::getAuthorizationUrl()->redirectNow();
+        return Npay::getAuthorizationUrl()->redirectNow();
     }
 
     /**
@@ -152,7 +152,7 @@ class PaymentController extends Controller
      */
     public function handleGatewayCallback()
     {
-        $paymentDetails = Paystack::getPaymentData();
+        $paymentDetails = Npay::getPaymentData();
 
         dd($paymentDetails);
         // Now you can do whatever you want with the details;
@@ -180,7 +180,7 @@ A sample HTML form will look like so:
             <input type="hidden" name="amount" value="800"> {{-- required in kobo --}}
             <input type="hidden" name="quantity" value="3">
             <input type="hidden" name="metadata" value="{{ json_encode($array = ['key_name' => 'value',]) }}" > {{-- For other necessary things you want to add to your payload. it is optional though --}}
-            <input type="hidden" name="reference" value="{{ NPay::genTranxRef() }}"> {{-- required --}}
+            <input type="hidden" name="reference" value="{{ Npay::genTranxRef() }}"> {{-- required --}}
             <input type="hidden" name="key" value="{{ config('npay.secretKey') }}"> {{-- required --}}
             {{ csrf_field() }} {{-- works only when using laravel 5.1, 5.2 --}}
             <input type="hidden" name="callbackUrl" value="your-callback-url"> {{-- required --}}
