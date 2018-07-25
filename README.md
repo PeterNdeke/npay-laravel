@@ -1,7 +1,7 @@
 # NPay-Laravel
 
 
-> A Laravel 5.6  Package for integrating NPay seamlessly
+> A Laravel 5.6  Package for integrating NPay seamlesslyA
 
 ## Installation
 
